@@ -75,56 +75,6 @@ The generated file can be checked against the official RKI CSV dump for this dat
 diff <(cat data/RKI_COVID19_2021-04-23_dump.csv | ./csv-sort.sh --without-metadata) <(cat data/RKI_COVID19_2021-04-23_init.csv | ./csv-sort.sh --without-metadata)
 ```
 
-## Definition of CSVs
-
-Columns provided by RKI:
-
-1.  `FID`
-2.  `IdBundesland`
-3.  `Bundesland`
-4.  `Landkreis`
-5.  `Altersgruppe`
-6.  `Geschlecht`
-7.  `AnzahlFall`
-8.  `AnzahlTodesfall`
-9.  `Meldedatum`
-10. `IdLandkreis`
-11. `Datenstand`
-12. `NeuerFall`
-13. `NeuerTodesfall`
-14. `Refdatum`
-15. `NeuGenesen`
-16. `AnzahlGenesen`
-17. `IstErkrankungsbeginn`
-18. `Altersgruppe2`
-
-Columns after applying `transform-csv.sh`:
-
-1.  `IdBundesland`
-2.  `IdLandkreis`
-3.  `Meldedatum` (format `YYYY-MM-DD`)
-4.  `Altersgruppe`
-5.  `Geschlecht`
-6.  `NeuerFall`
-7.  `NeuerTodesfall`
-8.  `NeuGenesen`
-9.  `AnzahlFall`
-10. `AnzahlTodesfall`
-11. `AnzahlGenesen`
-12. `Refdatum` (format `YYYY-MM-DD`)
-13. `IstErkrankungsbeginn`
-14. `Altersgruppe2`
-15. `GueltigAb`
-16. `GueltigBis`
-17. `DFID`
-
-Bedeutung der Spalten `Neu\*`
-
-- `0`: Fall (Anzahl > 0) ist heute drin, war gestern auch schon drin
-- `1`: Fall (Anzahl > 0) ist heute neu drin, war gestern noch nicht drin (= Korrektur nach oben)
-- `-1`: Fall (Anzahl >= 0) ist heute nicht mehr drin, war gestern aber noch drin (= Korrektur nach unten)
-- `-9`: Anzahl ist bislang immer NULL gewesen (wie `0`, aber Anzahl >= 0)
-
 ## Background
 
 The RKI publishes every day a new CSV dump of all COVID19 cases in Germany, where only about 2% of all data rows are changed per day. However, only the aggregeated CSV dumps are known for synchronisation. In order to get a minimal set of instructions to go from one data version to the other, this repository was created. It adopts ideas and code from the more generic [`tablediff` tool](https://github.com/fnogatz/tablediff), which serves a similar purpose for any pair of two CSV dumps.
@@ -160,3 +110,50 @@ Some numbers on an i5, 4x 2.30GHz:
 - The *initialisation* phase takes about 75 seconds: ~60sec for `.csv-transform.csv` and `csv-sort.sh`, plus ~15sec for loading the data in SQL.
 - The *update* phase takes about 5 minutes: ~1min for `.csv-transform.csv` and `csv-sort.sh`, plus ~3min for `./patch.sh` and SQL updates, and less than a minute for the intermediate steps.
 - The optional *check* phase takes about 2 minutes, with most of this time spent to calculate the (empty) `diff`.
+
+#### What's the form of the original RKI CSV files?
+
+We constantly refer to the column numbers in our scripts, so the following list might come in useful:
+
+1.  `FID`
+2.  `IdBundesland`
+3.  `Bundesland`
+4.  `Landkreis`
+5.  `Altersgruppe`
+6.  `Geschlecht`
+7.  `AnzahlFall`
+8.  `AnzahlTodesfall`
+9.  `Meldedatum`
+10. `IdLandkreis`
+11. `Datenstand`
+12. `NeuerFall`
+13. `NeuerTodesfall`
+14. `Refdatum`
+15. `NeuGenesen`
+16. `AnzahlGenesen`
+17. `IstErkrankungsbeginn`
+18. `Altersgruppe2`
+
+#### What's the form of the cleaned CSVs?
+
+After applying `csv-transform.sh`, the CSV files are of the following columns:
+
+1.  `IdBundesland`
+2.  `IdLandkreis`
+3.  `Meldedatum` (format `YYYY-MM-DD`)
+4.  `Altersgruppe`
+5.  `Geschlecht`
+6.  `NeuerFall`
+7.  `NeuerTodesfall`
+8.  `NeuGenesen`
+9.  `AnzahlFall`
+10. `AnzahlTodesfall`
+11. `AnzahlGenesen`
+12. `Refdatum` (format `YYYY-MM-DD`)
+13. `IstErkrankungsbeginn`
+14. `Altersgruppe2`
+15. `GueltigAb`
+16. `GueltigBis`
+17. `DFID`
+
+Note that the flag `--without-metadata` provided by the scripts `csv-transform.sh` and `csv-sort.sh` removes the last three columns `GueltigAb`, `GueltigBis`, and `DFID`. This makes it easier to compare two CSV files, as for instance done in the optional *check* phase.
