@@ -87,9 +87,9 @@ The Bash scripts use a combination of shell's `awk`, `sort`, and `diff` commands
 
 With a single CSV dump provided by the RKI, you lose all information about previous corrections in the data. If you ever wondered *What were the numbers known at this specific date the past?*, i.e. the exact numbers that the [RKI Dashboard](http://corona.rki.de/) listed, this repository is for you. In particular if you hesitate to store the original CSV files for each day, and instead wish to run ad-hoc queries about *all* these data with SQL.
 
-#### How does `rki-data-diff` it work?
+#### How does `rki-data-diff` work?
 
-The idea is to identify rows that have changed in the RKI CSV dumps of two days. As of April 2021, this saves around 98% of space. Per day, there are only between 25k and 35k rows that are added, instead of the original 1.7 million rows in the RKI CSV dumps.
+The idea is to identify rows that have changed in the RKI CSV dumps of two consecutive days. As of April 2021, this saves around 98% of space. Per day, there are only between 25k and 35k rows that are added, instead of the original 1.7 million rows in the RKI CSV dumps.
 
 #### Why don't you refer to the CSV's column `FID` to identify changed rows?
 
