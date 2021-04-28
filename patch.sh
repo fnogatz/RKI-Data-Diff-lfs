@@ -3,19 +3,18 @@
 TODAY=$(date '+%Y-%m-%d')
 
 function usage {
-    echo "Usage: patch [OPTIONS] [FILE]"
+    echo "Usage: patch [OPTIONS] OLD_CSV NEW_CSV"
     echo
-    echo "  Generate SQL-commands from patch file provided via file or stdin."
+    echo "  Generate SQL-commands from two CSV dumps."
     echo
     echo "Options:"
     echo
-    echo -e "  -d=DATE, --date=DATE\t\tUse given date as reference for GueltigAb and GueltigBis (default: $TODAY)"
     echo -e "  -t=TABLE, --table=TABLE\t\tUse this SQL table name (default: rki_csv)"
     echo -e "  -h, --help\t\t\tShow this message and exit"
     exit
 }
 
-while [[ $# -gt 0 ]]; do
+while [[ $# -gt 2 ]]; do
     key="$1"
     case $key in
         -d=*|--date=*)
@@ -37,131 +36,128 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-DELIMITER=','
+if [[ $# -lt 2 ]]; then
+    usage
+fi
+
 TABLE=${TABLE_NAME:-'rki_csv'}
-REF_TODAY=${DATE:-$TODAY}
-REF_YESTERDAY=$(date -d @$(( $(date -d $REF_TODAY +"%s") - 24*3600)) +"%Y-%m-%d")
 
-COLUMN_NAMES="IdBundesland,IdLandkreis,Meldedatum,Altersgruppe,Geschlecht,NeuerFall,NeuerTodesfall,NeuGenesen,AnzahlFall,AnzahlTodesfall,AnzahlGenesen,Refdatum,IstErkrankungsbeginn,Altersgruppe2"
-# get options as list
-IFS=',' read -ra COLS <<< "$COLUMN_NAMES"
+exec 3<"$1"
+exec 4<"$2"
 
-section=1
-rownumber=1
-in_buffer=()
-block_rowa_number=1
+read row1 <&3 && read row2 <&4 # omit very first line
 
-# read in patch
-while read line
+# read in and preprocess second line
+read row1 <&3
+read row2 <&4
+data1=${row1::-29}
+metadata1=${row1: -28}
+data2=${row2::-29}
+metadata2=${row2: -28}
+
+# store today's date from file2
+dfid=${row2: -15}
+yyyymmdd="${dfid:0:4}-${dfid:4:2}-${dfid:6:2}"
+REF_TODAY=$(date -d @$(date -d $yyyymmdd +"%s") +"%Y-%m-%d")
+REF_YESTERDAY=$(date -d @$(( $(date -d $yyyymmdd +"%s") - 24*3600)) +"%Y-%m-%d")
+
+echo "INSERT INTO $TABLE VALUES"
+
+comma="    "
+function addition {
+    echo -n "$comma"
+    echo -n "(\"$1" | sed 's/,/","/g; s/"N"/NULL/'
+    echo "\")"
+    comma="  , "
+}
+
+removals=()
+function removal {
+    dfid=${1: -15}
+    removals+=("$dfid")
+}
+
+# loop through all lines
+while [[ -n "$data1" || -n "$data2" ]]
 do
-    # diff header
-    if [[ $line =~ ^diff\s-arN ]]; then
-        continue
-    fi
-
-    # mode header
-    if [[ $line =~ ^[0-9]+(,[0-9]+)?[adc][0-9]+(,[0-9]+)?$ ]]; then
-        block=$line
-        if [[ $mode == "c" ]]; then
-            # there could possibly be open deletions of the previous change
-            while [[ $block_rowa_number -le ${#in_buffer[@]} ]]; do
-                # create deletion
-                where=" "
-                where_no=1
-
-                for pk_ix in "${!COLS[@]}"; do
-                    if [[ ${COLS[$pk_ix]} == "NeuerFall" ]]; then
-                        continue;
-                    fi
-                    if [[ ${COLS[$pk_ix]} == "NeuerTodesfall" ]]; then
-                        continue;
-                    fi
-                    if [[ ${COLS[$pk_ix]} == "NeuGenesen" ]]; then
-                        continue;
-                    fi
-
-                    if [[ $where_no -gt 1 ]]; then
-                        # add leading conjunction
-                        where="$where AND "
-                    fi
-
-                    where="$where${COLS[$pk_ix]}=\"${rowb[$pk_ix]}\""
-                    ((where_no++))
-                done
-                where="$where AND GueltigBis IS NULL"
-
-#                echo "UPDATE $TABLE SET GueltigBis='$REF_YESTERDAY' WHERE$where LIMIT 1; -- $block"
-                ((block_rowa_number++))
-            done
+    if [[ "$data1" == "$data2" ]]; then
+        if read row1 <&3; then 
+            data1=${row1::-29}
+            metadata1=${row1: -28}
+        else
+            data1=""
+        fi
+        if read row2 <&4; then 
+            data2=${row2::-29}
+            metadata2=${row2: -28}
+        else
+            data2=""
         fi
 
-        mode=${line//[^acd]/}  # either a=addition, c=change or d=deletion
-        section=1
-        rownumber=1
-        block_rowa_number=1
-        in_buffer=()
+    elif [[ "$data1" > "$data2" ]]; then
+        # new line detected
 
-        continue
+        if [[ -n "$data2" ]]; then
+            # addition of data2
+            addition "$row2"
+
+            if read row2 <&4; then 
+                data2=${row2::-29}
+                metadata2=${row2: -28}
+            else
+                data2=""
+            fi
+        else
+            # removal of data1, since file2 ended before
+            removal "$row1"
+
+            # continue with the rest of file1
+            if read row1 <&3; then 
+                data1=${row1::-29}
+                metadata1=${row1: -28}
+            else
+                data1=""
+            fi
+        fi
+
+    elif [[ "$data2" > "$data1" ]]; then
+        # deleted line detected
+
+        if [[ -n "$data1" ]]; then
+            # removal of data1
+            removal "$row1"
+
+            if read row1 <&3; then 
+                data1=${row1::-29}
+                metadata1=${row1: -28}
+            else
+                data1=""
+            fi
+        else
+            # addition of data2, since file1 ended before
+            addition "$row2"
+
+            # continue with the rest of file2
+            if read row2 <&4; then 
+                data2=${row2::-29}
+                metadata2=${row2: -28}
+            else
+                data2=""
+            fi
+        fi
     fi
+done
 
-    # diff section
-    if [[ $line == "---" ]]; then
-        section=2
-        block_rownumber=1
-        continue
-    fi
+# end previously started INSERT query
+echo ";"
 
-    # process line
-    row=${line#[<>] }  # remove leading "> "
-    row=${row%%[[:space:]]}  # remove trailing spaces
-    IFS="$DELIMITER" read -ra rowb <<< "$row"
-
-    # addition
-    if [[ ($mode == "a" && $section -eq 1) || ($mode == "c" && $section -eq 2) ]]; then
-        values=""
-        value_no=1
-
-        for pk_ix in "${!COLS[@]}"; do
-            if [[ $value_no -gt 1 ]]; then
-                # add leading comma
-                values="$values,"
-            fi
-
-            values="$values\"${rowb[$pk_ix]}\""
-            ((value_no++))
-        done
-
-        echo "INSERT INTO $TABLE VALUES ($values,\"$REF_TODAY\",NULL); -- $block"
-    fi
-
-    # deletion
-    if [[ ($mode == "d" || $mode == "c") && $section -eq 1 ]]; then
-        where=" "
-        where_no=1
-
-        for pk_ix in "${!COLS[@]}"; do
-            if [[ ${COLS[$pk_ix]} == "NeuerFall" ]]; then
-                continue;
-            fi
-            if [[ ${COLS[$pk_ix]} == "NeuerTodesfall" ]]; then
-                continue;
-            fi
-            if [[ ${COLS[$pk_ix]} == "NeuGenesen" ]]; then
-                continue;
-            fi
-
-            if [[ $where_no -gt 1 ]]; then
-                # add leading conjunction
-                where="$where AND "
-            fi
-
-            where="$where${COLS[$pk_ix]}=\"${rowb[$pk_ix]}\""
-            ((where_no++))
-        done
-        where="$where AND GueltigBis IS NULL"
-
-        echo "UPDATE $TABLE SET GueltigBis='$REF_YESTERDAY' WHERE$where LIMIT 1; -- $block"
-    fi
-
-    ((rownumber++))
-done < "${1:-/dev/stdin}"
+# create SQL query for removals
+comma="    "
+echo "UPDATE $TABLE SET GueltigBis='$REF_YESTERDAY' WHERE DFID IN ("
+for removal in ${removals[@]}
+do
+    echo -n "$comma"
+    echo "$removal"
+    comma="  , "
+done
+echo ");"

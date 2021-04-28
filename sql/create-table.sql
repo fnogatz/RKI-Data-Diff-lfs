@@ -14,5 +14,7 @@ CREATE TABLE IF NOT EXISTS rki_csv(
   IstErkrankungsbeginn INTEGER NOT NULL,
   Altersgruppe2        VARCHAR(20) NOT NULL,
   GueltigAb            DATE NOT NULL,
-  GueltigBis           DATE NULL
+  GueltigBis           DATE NULL,
+  DFID                 BIGINT NOT NULL,
+  PRIMARY KEY (DFID)
 ) DEFAULT CHARACTER SET = UTF8;
