@@ -63,18 +63,23 @@ REF_YESTERDAY=$(date -d @$(( $(date -d $yyyymmdd +"%s") - 24*3600)) +"%Y-%m-%d")
 
 echo "INSERT INTO $TABLE VALUES"
 
+n_additions=0
+
 comma="    "
 function addition {
     echo -n "$comma"
     echo -n "(\"$1" | sed 's/,/","/g; s/"N"/NULL/'
     echo "\")"
     comma="  , "
+    ((n_additions++))
 }
 
+n_removals=0
 removals=()
 function removal {
     dfid=${1: -15}
     removals+=("$dfid")
+    ((n_removals++))
 }
 
 # loop through all lines
@@ -161,3 +166,6 @@ do
     comma="  , "
 done
 echo ");"
+
+# print statistics
+echo "# $n_additions insertions(+), $n_removals deletions(-)"
