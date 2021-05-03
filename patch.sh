@@ -68,7 +68,7 @@ n_additions=0
 comma="    "
 function addition {
     echo -n "$comma"
-    echo -n "(\"$1" | sed 's/,/","/g; s/"N"/NULL/'
+    echo -n "(\"$1" | sed 's/,/","/g; s/"N"/NULL/g'
     echo "\")"
     comma="  , "
     ((n_additions++))
