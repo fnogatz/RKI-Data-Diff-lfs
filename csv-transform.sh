@@ -1,6 +1,7 @@
 #!/bin/bash
 
 TODAY=$(date '+%Y-%m-%d')
+DEFAULT_COLUMNS="IdBundesland,IdLandkreis,Meldedatum,Altersgruppe,Geschlecht,NeuerFall,NeuerTodesfall,NeuGenesen,AnzahlFall,AnzahlTodesfall,AnzahlGenesen,Refdatum,IstErkrankungsbeginn,Altersgruppe2"
 
 function usage {
     echo "Usage: ./csv-transform.sh [OPTIONS] [CSV_FILE]"
@@ -10,6 +11,7 @@ function usage {
     echo "Options:"
     echo
     echo -e "  -d=DATE, --date=DATE\t\tUse given date as 'GueltigAb' (default: $TODAY)"
+    echo -e "  -c=COLUMNS, --date=COLUMNS\t\tUse these columns (default: $DEFAULT_COLUMNS)"
     echo -e "  --without-metadata\t\tDo not add the last metadata columns"
     echo -e "  -h, --help\t\t\tShow this message and exit"
     exit
@@ -22,8 +24,8 @@ while [[ $# -gt 0 ]]; do
         DATE="${key#*=}"
         shift
         ;;
-        -s=*|--skip=*)
-        SKIP="${key#*=}"
+        -c=*|--columns=*)
+        COLS="${key#*=}"
         shift
         ;;
         --without-metadata)
@@ -41,26 +43,52 @@ while [[ $# -gt 0 ]]; do
 done
 
 GUELTIGAB=${DATE:-$TODAY}
+COLUMNS=${COLS:-$DEFAULT_COLUMNS}
 
-awk -v FPAT='[^,]*|"[^"]*"' -v gueltigab="$GUELTIGAB" -v without_metadata="$WITHOUT_METADATA" '{
+# we need to remove possible BOMs
+sed '1s/^\xEF\xBB\xBF//' < "${1:-/dev/stdin}" | \
+awk -F, -v FPAT='[^,]*|"[^"]*"' -v gueltigab="$GUELTIGAB" -v without_metadata="$WITHOUT_METADATA" -v columns="$COLUMNS" '
+{
     if (NR==1) {
-        if (without_metadata=="true") {
-            print $2","$10","$9","$5","$6","$12","$13","$15","$7","$8","$16","$14","$17","$18;
-        } else {
-            print $2","$10","$9","$5","$6","$12","$13","$15","$7","$8","$16","$14","$17","$18",GueltigAb,GueltigBis,DFID";
+        split(columns,cols,",");
+        for(i=1; i<=NF; i++) {
+            cell[$i]=i;
         }
+        if (without_metadata!="true") {
+            columns=columns",GueltigAb,GueltigBis,DFID";
+        }
+        print columns;
     } else {
-        sub(/ .*/, "", $9);
-        gsub(/\//, "-", $9);
-        sub(/ .*/, "", $14);
-        gsub(/\//, "-", $14);
-        if (without_metadata=="true") {
-            print $2","$10","$9","$5","$6","$12","$13","$15","$7","$8","$16","$14","$17","$18;
-        } else {
-            gsub(/\//, "-", gueltigab);
-            dfid=sprintf("%s%07d", gueltigab, $1);
-            gsub(/-/, "", dfid);
-            print $2","$10","$9","$5","$6","$12","$13","$15","$7","$8","$16","$14","$17","$18","gueltigab",\\N,"dfid;
+        if (cell["Meldedatum"] > 0) {
+            sub(/ .*/, "", $cell["Meldedatum"]);
+            gsub(/\//, "-", $cell["Meldedatum"]);
+            $cell["Meldedatum"]=substr($cell["Meldedatum"],1,10);
         }
+        if (cell["Refdatum"] > 0) {
+            sub(/ .*/, "", $cell["Refdatum"]);
+            gsub(/\//, "-", $cell["Refdatum"]);
+            $cell["Refdatum"]=substr($cell["Refdatum"],1,10);
+        }
+        row="";
+        comma=""
+
+        for(i in cols) {
+            column=cols[i];
+            ref=cell[column]
+            if (ref > 0) {
+                row=row comma $ref;
+            } else {
+                row=row comma "\\N"
+            }
+            comma=","
+        }
+
+        if (without_metadata!="true") {
+            gsub(/\//, "-", gueltigab);
+            dfid=sprintf("%s%07d", gueltigab, NR-1);
+            gsub(/-/, "", dfid);
+            row=row","gueltigab",\\N,"dfid;
+        }
+        print row;
     }
-}' < "${1:-/dev/stdin}"
+}'

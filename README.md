@@ -20,7 +20,7 @@ The overall process to keep track of all data changes consists of three phases: 
 First, create the SQL table `rki_csv`:
 
 ```sh
-cat sql/create-table.sql | mysql # -u [username] -p [database]
+cat create-table.sql | mysql # -u [username] -p [database]
 ```
 
 The initial data can be created from a given RKI CSV file as follows:
