@@ -46,7 +46,7 @@ cat data/RKI_COVID19_2021-04-23.csv | ./csv-transform.sh --date=2021-04-23 | ./c
 Create an unsorted CSV dump of the state currently stored in the SQL table:
 
 ```sh
-./create-sql-query.sh --date=2021-04-23 /path/to/data/RKI_COVID19_2021-04-23_tmp.csv | mysql # -u [username] -p [database]
+./create-sql-query.sh --known-before --date=2021-04-23 /path/to/data/RKI_COVID19_2021-04-23_tmp.csv | mysql # -u [username] -p [database]
 ```
 
 Sort the generated file:
