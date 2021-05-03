@@ -3,7 +3,7 @@
 TODAY=$(date '+%Y-%m-%d')
 
 function usage {
-    echo "Usage: ./create-sql-query [OPTIONS] FILENAME"
+    echo "Usage: ./create-sql-query.sh [OPTIONS] FILENAME"
     echo
     echo "  Create the SQL query to dump data in the same form as a cleaned CSV."
     echo
