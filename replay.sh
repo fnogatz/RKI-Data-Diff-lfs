@@ -92,7 +92,7 @@ if [[ -z "$CONTINUE" ]]; then
     echo "LOAD DATA LOCAL INFILE '$TMP_DIR/1-init.csv' INTO TABLE $TABLE CHARACTER SET UTF8 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' IGNORE 1 LINES;" | mysql --defaults-extra-file="$MYSQL_DEFAULTS_FILE"
 
     END=$(date +%s.%N)
-    DIFF=$(round 2 "$(echo "$END - $START" | bc)")
+    DIFF=$(round 1 "$(echo "$END - $START" | bc)")
     echo "# Full import for $date (took $DIFF seconds)"
     date=$(date -I -d "$date + 1 day")
 fi
@@ -111,10 +111,10 @@ while [[ ! "$date" > "$DATE_TO" ]]; do
     cat "$TMP_DIR/4-patch.sql" | mysql --defaults-extra-file="$MYSQL_DEFAULTS_FILE"
 
     END=$(date +%s.%N)
-    DIFF=$(round 2 "$(echo "$END - $START" | bc)")
+    DIFF=$(round 1 "$(echo "$END - $START" | bc)")
     changes=${changes:2}
     additions=$(echo "$changes" | sed 's/ .*$/ /g')
-    part=$(round 2 "$(echo "scale=3; 100 * $additions / $lines" | bc)")
+    part=$(round 1 "$(echo "scale=3; 100 * $additions / $lines" | bc)")
     echo "# $date ($changes = $part%, took $DIFF seconds)"
     date=$(date -I -d "$date + 1 day")
 done
