@@ -69,6 +69,18 @@ else
     TMP_DIR="$TMP_DIR_USER"
 fi
 
+function round {
+    n=$(printf "%.${1}g" "$2")
+    if [ "$n" != "${n#*e}" ]
+    then
+        f="${n##*e-}"
+        test "$n" = "$f" && f= || f=$(( ${f#0}+$1-1 ))
+        printf "%0.${f}f" "$n"
+    else
+        printf "%s" "$n"
+    fi
+}
+
 date="$DATE_FROM"
 
 if [[ -z "$CONTINUE" ]]; then
@@ -80,7 +92,7 @@ if [[ -z "$CONTINUE" ]]; then
     echo "LOAD DATA LOCAL INFILE '$TMP_DIR/1-init.csv' INTO TABLE $TABLE CHARACTER SET UTF8 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' IGNORE 1 LINES;" | mysql --defaults-extra-file="$MYSQL_DEFAULTS_FILE"
 
     END=$(date +%s.%N)
-    DIFF=$(printf "%.2g\n" "$(echo "$END - $START" | bc)")
+    DIFF=$(round 2 "$(echo "$END - $START" | bc)")
     echo "# Full import for $date (took $DIFF seconds)"
     date=$(date -I -d "$date + 1 day")
 fi
@@ -99,10 +111,10 @@ while [[ ! "$date" > "$DATE_TO" ]]; do
     cat "$TMP_DIR/4-patch.sql" | mysql --defaults-extra-file="$MYSQL_DEFAULTS_FILE"
 
     END=$(date +%s.%N)
-    DIFF=$(printf "%.2g\n" "$(echo "$END - $START" | bc)")
+    DIFF=$(round 2 "$(echo "$END - $START" | bc)")
     changes=${changes:2}
     additions=$(echo "$changes" | sed 's/ .*$/ /g')
-    part=$(printf "%.2g\n" "$(echo "scale=3; 100 * $additions / $lines" | bc)")
+    part=$(round 2 "$(echo "scale=3; 100 * $additions / $lines" | bc)")
     echo "# $date ($changes = $part%, took $DIFF seconds)"
     date=$(date -I -d "$date + 1 day")
 done
