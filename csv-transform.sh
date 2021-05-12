@@ -11,7 +11,7 @@ function usage {
     echo "Options:"
     echo
     echo -e "  -d=DATE, --date=DATE\t\tUse given date as 'GueltigAb' (default: $TODAY)"
-    echo -e "  -c=COLUMNS, --date=COLUMNS\t\tUse these columns (default: $DEFAULT_COLUMNS)"
+    echo -e "  -c=COLUMNS, --columns=COLUMNS\t\tUse these columns (default: $DEFAULT_COLUMNS)"
     echo -e "  --without-metadata\t\tDo not add the last metadata columns"
     echo -e "  -h, --help\t\t\tShow this message and exit"
     exit
@@ -46,7 +46,7 @@ GUELTIGAB=${DATE:-$TODAY}
 COLUMNS=${COLS:-$DEFAULT_COLUMNS}
 
 # we need to remove possible BOMs
-sed '1s/^\xEF\xBB\xBF//' < "${1:-/dev/stdin}" | \
+sed '1s/^\xEF\xBB\xBF//;s/\r//' < "${1:-/dev/stdin}" | \
 awk -F, -v FPAT='[^,]*|"[^"]*"' -v gueltigab="$GUELTIGAB" -v without_metadata="$WITHOUT_METADATA" -v columns="$COLUMNS" '
 {
     if (NR==1) {
@@ -60,27 +60,37 @@ awk -F, -v FPAT='[^,]*|"[^"]*"' -v gueltigab="$GUELTIGAB" -v without_metadata="$
         print columns;
     } else {
         if (cell["Meldedatum"] > 0) {
-            sub(/ .*/, "", $cell["Meldedatum"]);
-            gsub(/\//, "-", $cell["Meldedatum"]);
-            $cell["Meldedatum"]=substr($cell["Meldedatum"],1,10);
+            if ($cell["Meldedatum"] ~ /^[0-9]{13}$/) {
+                # UNIX timestamp in milliseconds
+                $cell["Meldedatum"]=strftime("%Y-%m-%d",substr($cell["Meldedatum"],1,10));
+            } else {
+                sub(/ .*/, "", $cell["Meldedatum"]);
+                gsub(/\//, "-", $cell["Meldedatum"]);
+                $cell["Meldedatum"]=substr($cell["Meldedatum"],1,10);
+            }
         }
         if (cell["Refdatum"] > 0) {
-            sub(/ .*/, "", $cell["Refdatum"]);
-            gsub(/\//, "-", $cell["Refdatum"]);
-            $cell["Refdatum"]=substr($cell["Refdatum"],1,10);
+            if ($cell["Refdatum"] ~ /^[0-9]{13}$/) {
+                # UNIX timestamp in milliseconds
+                $cell["Refdatum"]=strftime("%Y-%m-%d",substr($cell["Refdatum"],1,10));
+            } else {
+                sub(/ .*/, "", $cell["Refdatum"]);
+                gsub(/\//, "-", $cell["Refdatum"]);
+                $cell["Refdatum"]=substr($cell["Refdatum"],1,10);
+            }
         }
         row="";
-        comma=""
+        comma="";
 
         for(i in cols) {
             column=cols[i];
-            ref=cell[column]
+            ref=cell[column];
             if (ref > 0) {
                 row=row comma $ref;
             } else {
-                row=row comma "\\N"
+                row=row comma "\\N";
             }
-            comma=","
+            comma=",";
         }
 
         if (without_metadata!="true") {
