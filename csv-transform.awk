@@ -15,6 +15,20 @@ function parse_date(input) {
             dd="0" dd;
         }
         return yyyy "-" mm "-" dd;
+    } else if (input ~ /^([1-9]|[12][0-9]|3[01])\.(1[012]|[1-9])\.20[0-9]{2}/) {
+        # dd.mm.yyyy
+        sub(/ .*/, "", input);
+        split(input,parts,".");
+        yyyy=parts[3];
+        mm=parts[2];
+        if (length(mm) == 1) {
+            mm="0" mm;
+        }
+        dd=parts[1];
+        if (length(dd) == 1) {
+            dd="0" dd;
+        }
+        return yyyy "-" mm "-" dd;
     } else {
         sub(/ .*/, "", input);
         gsub(/\//, "-", input);
@@ -22,16 +36,24 @@ function parse_date(input) {
     }
 }
 function normalise_name(name) {
+    gsub(/"/, "", name);
     if (name == "Landkreis ID") {
         return "IdLandkreis";
     }
     if (name == "Referenzdatum") {
         return "Refdatum";
     }
+    if (name == "Meldedatum2") {
+        return "Meldedatum";
+    }
     gsub(/ /, "", name);
     return name;
 }
 function normalise_value(name, value) {
+    gsub(/"/, "", value);
+    if (value ~ /\.00$/) {
+        value=substr(value,1,length(value)-3);
+    }
     if (name == "IdLandkreis") {
         if (length(value) == 4) {
             return "0" value;
