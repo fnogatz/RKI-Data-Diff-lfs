@@ -37,6 +37,11 @@ function normalise_value(name, value) {
             return "0" value;
         }
     }
+    if (name == "Altersgruppe2") {
+        if (value == "" || value == "Nicht übermittelt") {
+            return "\\N";
+        }
+    }
     return value;
 }
 
