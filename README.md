@@ -9,6 +9,8 @@ This repository contains scripts to process RKI data given as unsorted CSV files
 - `create-sql-query.sh`, which creates the SQL query to dump data in the same form as a cleaned CSV.
 - `patch.sh`, which takes two CSV files and generates SQL commands to get from the current state stored in the SQL table to the new state provided by the RKI dump.
 
+In addition, `replay.sh` allows to automate this process for a given time span.
+
 Each Bash script comes with its own command line arguments, so simply call them with `--help` to get a full list of options.
 
 ## Usage
