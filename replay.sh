@@ -84,6 +84,12 @@ function round {
 date="$DATE_FROM"
 
 if [[ -z "$CONTINUE" ]]; then
+    DATABASE=$(sed -n 's/^database=\([^ ]\+\).*/\1/p' "$MYSQL_DEFAULTS_FILE")
+    DUMP_PATH="$TMP_DIR/$TABLE.sql.gz"
+    echo "# Create mysqldump in $DUMP_PATH and empty table"
+    mysqldump --defaults-extra-file="$MYSQL_DEFAULTS_FILE" "$DATABASE" "$TABLE" | gzip > "$DUMP_PATH"
+    echo "DELETE FROM $TABLE;" | mysql --defaults-extra-file="$MYSQL_DEFAULTS_FILE"
+
     START=$(date +%s.%N)
     echo "# START for $date: table initialisation"
     wget -q "https://github.com/micb25/RKI_COVID19_DATA/raw/master/RKI_COVID19_$date.csv.gz" -O "$TMP_DIR/RKI_COVID19.csv.gz"
