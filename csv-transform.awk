@@ -40,7 +40,7 @@ function normalise_name(name) {
     if (name == "Landkreis ID") {
         return "IdLandkreis";
     }
-    if (name == "Referenzdatum") {
+    if (name == "Referenzdatum" || name == "Refdatum2") {
         return "Refdatum";
     }
     if (name == "Meldedatum2") {
