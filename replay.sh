@@ -94,7 +94,7 @@ if [[ -z "$CONTINUE" ]]; then
     echo "# START for $date: table initialisation"
     wget -q "https://github.com/micb25/RKI_COVID19_DATA/raw/master/RKI_COVID19_$date.csv.gz" -O "$TMP_DIR/RKI_COVID19.csv.gz"
     gzip -d -f "$TMP_DIR/RKI_COVID19.csv.gz"
-    cat "$TMP_DIR/RKI_COVID19.csv" | ./csv-transform.sh --date="$date" | ./csv-sort.sh > "$TMP_DIR/1-init.csv"
+    ./csv-transform.sh --date="$date" "$TMP_DIR/RKI_COVID19.csv" | ./csv-sort.sh > "$TMP_DIR/1-init.csv"
     echo "LOAD DATA LOCAL INFILE '$TMP_DIR/1-init.csv' INTO TABLE $TABLE CHARACTER SET UTF8 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' IGNORE 1 LINES;" | mysql --defaults-extra-file="$MYSQL_DEFAULTS_FILE"
 
     END=$(date +%s.%N)
@@ -107,8 +107,9 @@ while [[ ! "$date" > "$DATE_TO" ]]; do
     START=$(date +%s.%N)
     wget -q "https://github.com/micb25/RKI_COVID19_DATA/raw/master/RKI_COVID19_$date.csv.gz" -O "$TMP_DIR/RKI_COVID19.csv.gz"
     gzip -d -f "$TMP_DIR/RKI_COVID19.csv.gz"
+
     lines=$(wc -l "$TMP_DIR/RKI_COVID19.csv" | sed 's/ .*$/ /g')
-    cat "$TMP_DIR/RKI_COVID19.csv" | ./csv-transform.sh --date="$date" | ./csv-sort.sh > "$TMP_DIR/1-init.csv"
+    ./csv-transform.sh --date="$date" "$TMP_DIR/RKI_COVID19.csv" | ./csv-sort.sh > "$TMP_DIR/1-init.csv"
     rm -f "$TMP_DIR/2-tmp.csv"
     ./create-sql-query.sh --known-before --date="$date" "$TMP_DIR/2-tmp.csv" | mysql --defaults-extra-file="$MYSQL_DEFAULTS_FILE"
     cat "$TMP_DIR/2-tmp.csv" | ./csv-sort.sh > "$TMP_DIR/3-predump.csv"
