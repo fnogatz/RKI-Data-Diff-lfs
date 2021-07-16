@@ -11,7 +11,7 @@ function usage {
     echo "Options:"
     echo
     echo -e "  -d=DATE, --date=DATE\t\tUse given date as 'GueltigAb' (default: $TODAY)"
-    echo -e "  -c=COLUMNS, --columns=COLUMNS\t\tUse these columns (default: $DEFAULT_COLUMNS)"
+    echo -e "  -c=COLUMNS, --columns=COLUMNS\tUse these columns\n\t\t\t\t(default: $DEFAULT_COLUMNS)"
     echo -e "  --without-metadata\t\tDo not add the last metadata columns"
     echo -e "  -h, --help\t\t\tShow this message and exit"
     exit

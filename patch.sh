@@ -9,7 +9,7 @@ function usage {
     echo
     echo "Options:"
     echo
-    echo -e "  -t=TABLE, --table=TABLE\t\tUse this SQL table name (default: rki_csv)"
+    echo -e "  -t=TABLE, --table=TABLE\tUse this SQL table name (default: rki_csv)"
     echo -e "  -h, --help\t\t\tShow this message and exit"
     exit
 }

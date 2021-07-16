@@ -11,7 +11,7 @@ function usage {
     echo
     echo -e "  -d=DATE, --date=DATE\t\tUse given date (default: $TODAY)"
     echo -e "  --known-before\t\tReturn only rows that are known before the given date"
-    echo -e "  -t=TABLE, --table=TABLE\t\tUse this SQL table name (default: rki_csv)"
+    echo -e "  -t=TABLE, --table=TABLE\tUse this SQL table name (default: rki_csv)"
     echo -e "  -h, --help\t\t\tShow this message and exit"
     exit
 }
