@@ -4,6 +4,7 @@ export LC_NUMERIC="en_US.UTF-8"
 
 STARTDATE_DEFAULT="2020-03-21"
 TODAY=$(date '+%Y-%m-%d')
+SOURCE_DEFAULT="https://github.com/micb25/RKI_COVID19_DATA/raw/master"
 
 function usage {
     echo "Usage: ./replay.sh [OPTIONS] MYSQL_DEFAULTS_FILE"
@@ -12,11 +13,12 @@ function usage {
     echo
     echo "Options:"
     echo
-    echo -e "  --start=DATE\t\tUse given date as start (default: $STARTDATE_DEFAULT)"
-    echo -e "  --end=DATE\t\tUse given date as end (default: $TODAY)"
-    echo -e "  -d=DIR, --dir=DIR\t\tUse this directory for temporary files (default: /tmp/...)"
-    echo -e "  -t=TABLE, --table=TABLE\t\tUse this SQL table name (default: rki_csv)"
+    echo -e "  --start=DATE\t\t\tUse given date as start\n\t\t\t\t(default: $STARTDATE_DEFAULT)"
+    echo -e "  --end=DATE\t\t\tUse given date as end\n\t\t\t\t(default: today, i.e. $TODAY)"
+    echo -e "  -d=DIR, --dir=DIR\t\tUse this directory for temporary files\n\t\t\t\t(default: /tmp/...)"
+    echo -e "  -t=TABLE, --table=TABLE\tUse this SQL table name\n\t\t\t\t(default: rki_csv)"
     echo -e "  -c, --continue\t\tStart with update phase instead of initialisation"
+    echo -e "  --source=URL\t\t\tGitHub URL of data repository\n\t\t\t\t(default: $SOURCE_DEFAULT)"
     echo -e "  -h, --help\t\t\tShow this message and exit"
     exit
 }
@@ -44,6 +46,10 @@ while [[ $# -gt 0 ]]; do
         CONTINUE=true
         shift
         ;;
+        --source=*)
+        SOURCE_URL="${key#*=}"
+        shift
+        ;;
         -h|--help)
         usage
         shift
@@ -62,6 +68,7 @@ MYSQL_DEFAULTS_FILE="$1"
 DATE_FROM=${DATE_A:-$STARTDATE_DEFAULT}
 DATE_TO=${DATE_B:-$TODAY}
 TABLE=${TABLE_NAME:-'rki_csv'}
+SOURCE=${SOURCE_URL:-$SOURCE_DEFAULT}
 
 if [[ -z $TMP_DIR_USER ]]; then
     TMP_DIR=`mktemp -d -p /tmp`
@@ -92,7 +99,7 @@ if [[ -z "$CONTINUE" ]]; then
 
     START=$(date +%s.%N)
     echo "# START for $date: table initialisation"
-    wget -q "https://github.com/micb25/RKI_COVID19_DATA/raw/master/RKI_COVID19_$date.csv.gz" -O "$TMP_DIR/RKI_COVID19.csv.gz"
+    wget -q "$SOURCE/RKI_COVID19_$date.csv.gz" -O "$TMP_DIR/RKI_COVID19.csv.gz"
     gzip -d -f "$TMP_DIR/RKI_COVID19.csv.gz"
     ./csv-transform.sh --date="$date" "$TMP_DIR/RKI_COVID19.csv" | ./csv-sort.sh > "$TMP_DIR/1-init.csv"
     echo "LOAD DATA LOCAL INFILE '$TMP_DIR/1-init.csv' INTO TABLE $TABLE CHARACTER SET UTF8 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' IGNORE 1 LINES;" | mysql --defaults-extra-file="$MYSQL_DEFAULTS_FILE"
@@ -105,7 +112,7 @@ fi
 
 while [[ ! "$date" > "$DATE_TO" ]]; do 
     START=$(date +%s.%N)
-    wget -q "https://github.com/micb25/RKI_COVID19_DATA/raw/master/RKI_COVID19_$date.csv.gz" -O "$TMP_DIR/RKI_COVID19.csv.gz"
+    wget -q "$SOURCE/RKI_COVID19_$date.csv.gz" -O "$TMP_DIR/RKI_COVID19.csv.gz"
     gzip -d -f "$TMP_DIR/RKI_COVID19.csv.gz"
 
     lines=$(wc -l "$TMP_DIR/RKI_COVID19.csv" | sed 's/ .*$/ /g')
