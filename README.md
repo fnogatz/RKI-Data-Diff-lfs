@@ -83,7 +83,7 @@ diff <(cat data/RKI_COVID19_2021-04-23_dump.csv | ./csv-sort.sh --without-metada
 
 ## Background
 
-The RKI publishes every day a new CSV dump of all COVID19 cases in Germany, where only about 2% of all data rows are changed per day. However, only the aggregeated CSV dumps are known for synchronisation. In order to get a minimal set of instructions to go from one data version to the other, this repository was created. It adopts ideas and code from the more generic [`tablediff` tool](https://github.com/fnogatz/tablediff), which serves a similar purpose for any pair of two CSV dumps.
+The RKI publishes every day a new CSV dump of all COVID19 cases in Germany, where only about 0.2% to 2.0% of all data rows are changed per day. However, only the aggregeated CSV dumps are known for synchronisation. In order to get a minimal set of instructions to go from one data version to the other, this repository was created. It adopts ideas and code from the more generic [`tablediff` tool](https://github.com/fnogatz/tablediff), which serves a similar purpose for any pair of two CSV dumps.
 
 The Bash scripts use a combination of shell's `awk`, `sort`, and `diff` commands, to split, sort, and compare large CSV files and SQL dumps in a best-effort manner.
 
