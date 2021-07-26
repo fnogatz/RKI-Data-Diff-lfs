@@ -15,11 +15,11 @@ Each Bash script comes with its own command line arguments, so simply call them 
 
 ## Usage
 
-The overall process to keep track of all data changes consists of three phases: the *initialisation* creates the SQL table and imports the initial state from a single CSV file provided by RKI. In the second *update* phase, a set of updates is calculated to keep track of all changes and should be run once a day. To test the correctness of some state, the same scripts can be applied in an optional *check* phase.
+The overall process to keep track of all data changes consists of three phases: the _initialisation_ creates the SQL table and imports the initial state from a single CSV file provided by RKI. In the second _update_ phase, a set of updates is calculated to keep track of all changes and should be run once a day. To test the correctness of some state, the same scripts can be applied in an optional _check_ phase.
 
 ### Prerequisites
 
-Make sure the SQL user is allowed to read from and write to the data directory (`/path/to/data/` in the following usage examples). For the combined `replay.sh`, you first need to create a *MySQL defaults file*, which must be provided as the script's last argument.
+Make sure the SQL user is allowed to read from and write to the data directory (`/path/to/data/` in the following usage examples). For the combined `replay.sh`, you first need to create a _MySQL defaults file_, which must be provided as the script's last argument.
 
 ### Initialisation
 
@@ -91,7 +91,7 @@ The Bash scripts use a combination of shell's `awk`, `sort`, and `diff` commands
 
 #### Why don't you use only the latest CSV dump?
 
-With a single CSV dump provided by the RKI, you lose all information about previous corrections in the data. If you ever wondered *What were the numbers known at this specific date the past?*, i.e. the exact numbers that the [RKI Dashboard](http://corona.rki.de/) listed, this repository is for you. In particular if you hesitate to store the original CSV files for each day, and instead wish to run ad-hoc queries about *all* these data with SQL.
+With a single CSV dump provided by the RKI, you lose all information about previous corrections in the data. If you ever wondered _What were the numbers known at this specific date the past?_, i.e. the exact numbers that the [RKI Dashboard](http://corona.rki.de/) listed, this repository is for you. In particular if you hesitate to store the original CSV files for each day, and instead wish to run ad-hoc queries about _all_ these data with SQL.
 
 #### How does `rki-data-diff` work?
 
@@ -113,9 +113,9 @@ It makes it easier to sort the CSV dumps by their values via the shell's `sort` 
 
 Some numbers on an i5, 4x 2.30GHz:
 
-- The *initialisation* phase takes about 75 seconds: ~60sec for `.csv-transform.csv` and `csv-sort.sh`, plus ~15sec for loading the data in SQL.
-- The *update* phase takes about 5 minutes: ~1min for `.csv-transform.csv` and `csv-sort.sh`, plus ~3min for `./patch.sh` and SQL updates, and less than a minute for the intermediate steps.
-- The optional *check* phase takes about 2 minutes, with most of this time spent to calculate the (empty) `diff`.
+- The _initialisation_ phase takes about 75 seconds: ~60sec for `.csv-transform.csv` and `csv-sort.sh`, plus ~15sec for loading the data in SQL.
+- The _update_ phase takes about 5 minutes: ~1min for `.csv-transform.csv` and `csv-sort.sh`, plus ~3min for `./patch.sh` and SQL updates, and less than a minute for the intermediate steps.
+- The optional _check_ phase takes about 2 minutes, with most of this time spent to calculate the (empty) `diff`.
 
 #### What's the form of the original RKI CSV files?
 
@@ -162,7 +162,7 @@ After applying `csv-transform.sh`, the CSV files are of the following columns:
 16. `GueltigBis`
 17. `DFID`
 
-Note that the flag `--without-metadata` provided by the scripts `csv-transform.sh` and `csv-sort.sh` removes the last three columns `GueltigAb`, `GueltigBis`, and `DFID`. This makes it easier to compare two CSV files, as for instance done in the optional *check* phase.
+Note that the flag `--without-metadata` provided by the scripts `csv-transform.sh` and `csv-sort.sh` removes the last three columns `GueltigAb`, `GueltigBis`, and `DFID`. This makes it easier to compare two CSV files, as for instance done in the optional _check_ phase.
 
 #### Common Error Messages
 
