@@ -2,7 +2,6 @@
 
 export LC_NUMERIC="en_US.UTF-8"
 
-STARTDATE_DEFAULT="2020-03-21"
 TODAY=$(date '+%Y-%m-%d')
 SOURCE_DEFAULT="https://github.com/micb25/RKI_COVID19_DATA/raw/master"
 
@@ -13,7 +12,7 @@ function usage {
     echo
     echo "Options:"
     echo
-    echo -e "  --start=DATE\t\t\tUse given date as start\n\t\t\t\t(default: $STARTDATE_DEFAULT)"
+    echo -e "  --start=DATE\t\t\tUse given date as start\n\t\t\t\t(default: $TODAY; first possible is 2020-03-21)"
     echo -e "  --end=DATE\t\t\tUse given date as end\n\t\t\t\t(default: today, i.e. $TODAY)"
     echo -e "  -d=DIR, --dir=DIR\t\tUse this directory for temporary files\n\t\t\t\t(default: /tmp/...)"
     echo -e "  -t=TABLE, --table=TABLE\tUse this SQL table name\n\t\t\t\t(default: rki_csv)"
@@ -65,7 +64,7 @@ if [[ $# -lt 1 ]]; then
 fi
 
 MYSQL_DEFAULTS_FILE="$1"
-DATE_FROM=${DATE_A:-$STARTDATE_DEFAULT}
+DATE_FROM=${DATE_A:-$TODAY}
 DATE_TO=${DATE_B:-$TODAY}
 TABLE=${TABLE_NAME:-'rki_csv'}
 SOURCE=${SOURCE_URL:-$SOURCE_DEFAULT}
