@@ -87,6 +87,10 @@ The RKI publishes every day a new CSV dump of all COVID19 cases in Germany, wher
 
 The Bash scripts use a combination of shell's `awk`, `sort`, and `diff` commands, to split, sort, and compare large CSV files and SQL dumps in a best-effort manner.
 
+## Work with the Data
+
+Some example SQL queries to get the total number of cases, new cases reported at a specific date, etc., are given in [`Queries.md`](Queries.md).
+
 ## FAQ
 
 #### Why don't you use only the latest CSV dump?
