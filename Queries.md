@@ -15,7 +15,7 @@ On earch query you have to specify the `VERSION_DATE` in the WHERE-clause as fol
 ... WHERE (GueltigBis IS NULL OR GueltigBis >= 'VERSION_DATE') AND GueltigAb <= 'VERSION_DATE'
 ```
 
-In contrast, the specification of the `REF_DATE` depends on your actual query.
+In contrast, the specification of `REF_DATE` depends on your actual query.
 
 ## Sum of Cases
 
