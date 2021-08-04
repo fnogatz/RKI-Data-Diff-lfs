@@ -20,3 +20,6 @@ csv.download: data_dir
 	curl -L $(URL_DATASET) --output $(DIR)/$(FILENAME).csv
 	@echo "# Update LOCK by most recent modification time $(MODIFIED)"
 	echo -n $(MODIFIED) > $(DIR)/LOCK
+
+test:
+	npm test
