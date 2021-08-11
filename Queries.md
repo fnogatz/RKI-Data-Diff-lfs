@@ -99,3 +99,39 @@ WHERE
   (GueltigBis IS NULL OR GueltigBis >= '2021-07-27') AND GueltigAb <= '2021-07-27'; # VERSION_DATE
 # SUM(AnzahlFall) = 51 [2 sec]
 ```
+
+## Generation of original RKI-CSV
+
+### Re-create CSV data for a given day
+
+The script `create-sql-query.sh` allows to re-create the CSV data of a specific day as provided by the RKI, without the irrelevant columns `FID`, `Bundesland`, `Landkreis`, and `Datenstand`. Run `./create-sql-query.sh --help` for usage information. The following call creates a CSV dump in `/path/to/data/RKI_COVID19_sql.csv` for 2021-07-23.
+
+```sh
+./create-sql-query.sh --date=2021-07-23 /path/to/data/RKI_COVID19_sql.csv | mysql # -u [username] -p [database]
+```
+
+The created file can be used to compare it with the original RKI-CSV from `/path/to/data/RKI_COVID19_2021-07-23.csv`:
+
+```sh
+diff <(./csv-sort.sh --without-metadata /path/to/data/RKI_COVID19_sql.csv) <(./csv-transform.sh /path/to/data/RKI_COVID19_2021-07-23.csv | ./csv-sort.sh --without-metadata)
+# should return no diffs
+```
+
+### Changes per Day
+
+This returns the number of changes per day for the interval 2020-03-21 to today. Note that this query takes around 80 sec per covered month. The `Loc` is exactly the number of rows (without the header) in the RKI-CSV of the corresponding day.
+
+```sql
+WITH recursive Date_Ranges AS (
+  SELECT '2020-03-21' AS Date
+  UNION ALL
+  SELECT Date + INTERVAL 1 DAY
+  FROM Date_Ranges
+  WHERE Date < CURDATE())
+SELECT
+  Date,
+  ( SELECT COUNT(*) FROM rki_csv
+    WHERE (GueltigBis IS NULL OR GueltigBis >= Date) AND GueltigAb <= Date
+  ) AS Loc
+FROM Date_Ranges;
+```
