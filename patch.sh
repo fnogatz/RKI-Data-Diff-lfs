@@ -59,7 +59,7 @@ metadata2=${row2: -28}
 dfid=${row2: -15}
 yyyymmdd="${dfid:0:4}-${dfid:4:2}-${dfid:6:2}"
 REF_TODAY=$(date -d @$(date -d $yyyymmdd +"%s") +"%Y-%m-%d")
-REF_YESTERDAY=$(date -d @$(($(date -d $yyyymmdd +"%s") - 24 * 3600)) +"%Y-%m-%d")
+REF_YESTERDAY=$(date -I -d "$yyyymmdd - 1 day")
 
 echo "INSERT INTO $TABLE VALUES"
 

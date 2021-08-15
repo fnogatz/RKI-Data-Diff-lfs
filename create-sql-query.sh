@@ -51,7 +51,7 @@ TABLE=${TABLE_NAME:-'rki_csv'}
 
 REF_DATE_COMPARISON="$REF_DATE"
 if [[ $KNOWN_BEFORE ]]; then
-  REF_DATE_COMPARISON=$(date -d @$(($(date -d $REF_DATE +"%s") - 24 * 3600)) +"%Y-%m-%d")
+  REF_DATE_COMPARISON=$(date -I -d "$REF_DATE - 1 day")
 fi
 
 cat << ENDMYSQL
