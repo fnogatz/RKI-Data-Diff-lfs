@@ -6,7 +6,7 @@ TODAY=$(date '+%Y-%m-%d')
 SOURCE_DEFAULT="https://github.com/micb25/RKI_COVID19_DATA/raw/master"
 
 function usage() {
-  echo "Usage: ./replay.sh [OPTIONS] MYSQL_DEFAULTS_FILE"
+  echo "Usage: ./replay.sh [OPTIONS] [MYSQL_DEFAULTS_FILE]"
   echo
   echo "  Create the SQL query to dump data in the same form as a cleaned CSV."
   echo
@@ -16,7 +16,8 @@ function usage() {
   echo -e "  --end=DATE\t\t\tUse given date as end\n\t\t\t\t(default: today, i.e. $TODAY)"
   echo -e "  -d=DIR, --dir=DIR\t\tUse this directory for temporary files\n\t\t\t\t(default: /tmp/...)"
   echo -e "  -t=TABLE, --table=TABLE\tUse this SQL table name\n\t\t\t\t(default: rki_csv)"
-  echo -e "  -c, --continue\t\tStart with update phase instead of initialisation"
+  echo -e "  --init\t\t\tStart with init phase instead of just updating data"
+  echo -e "  --stats-only\t\t\tOnly print the LOC of each day's CSV"
   echo -e "  --source=URL\t\t\tGitHub URL of data repository\n\t\t\t\t(default: $SOURCE_DEFAULT)"
   echo -e "  -h, --help\t\t\tShow this message and exit"
   exit
@@ -41,8 +42,12 @@ while [[ $# -gt 0 ]]; do
       TABLE_NAME="${key#*=}"
       shift
       ;;
-    -c | --continue)
-      CONTINUE=true
+    --init)
+      INIT=true
+      shift
+      ;;
+    --stats-only)
+      STATS_ONLY=true
       shift
       ;;
     --source=*)
@@ -59,7 +64,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ $# -lt 1 ]]; then
+if [[ $# -lt 1 && -z "$STATS_ONLY" ]]; then
   usage
 fi
 
@@ -88,7 +93,7 @@ function round() {
 
 date="$DATE_FROM"
 
-if [[ -z "$CONTINUE" ]]; then
+if [[ ! -z "$INIT" ]]; then
   DATABASE=$(sed -n 's/^database=\([^ ]\+\).*/\1/p' "$MYSQL_DEFAULTS_FILE")
   DUMP_PATH="$TMP_DIR/$TABLE.sql.gz"
   echo "# Create mysqldump in $DUMP_PATH and empty table"
@@ -114,6 +119,13 @@ while [[ ! "$date" > "$DATE_TO" ]]; do
   gzip -d -f "$TMP_DIR/RKI_COVID19.csv.gz"
 
   lines=$(wc -l "$TMP_DIR/RKI_COVID19.csv" | sed 's/ .*$/ /g')
+
+  if [[ ! -z "$STATS_ONLY" ]]; then
+    echo "$date,$lines"
+    date=$(date -I -d "$date + 1 day")
+    continue
+  fi
+
   ./csv-transform.sh --date="$date" "$TMP_DIR/RKI_COVID19.csv" | ./csv-sort.sh > "$TMP_DIR/1-init.csv"
   rm -f "$TMP_DIR/2-tmp.csv"
   ./create-sql-query.sh --known-before --date="$date" "$TMP_DIR/2-tmp.csv" | mysql --defaults-extra-file="$MYSQL_DEFAULTS_FILE"
