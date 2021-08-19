@@ -28,18 +28,18 @@ jobs:
         run: |
           echo 'secure_file_priv=""' | sudo tee -a /etc/mysql/mysql.conf.d/mysqld.cnf
           sudo systemctl start mysql.service
+          mysql -uroot -proot -e 'CREATE DATABASE IF NOT EXISTS dfki;'
 
       - name: Prepare database
         run: |
-          mysql -uroot -proot -e 'CREATE DATABASE IF NOT EXISTS dfki;'
-          mysql -uroot -proot -e 'SHOW VARIABLES LIKE "secure_file_priv";'
+          sudo mkdir /tmp/datadir && sudo chmod 777 /tmp/datadir
           gzip -d data/rki_csv.sql.gz
           mysql --defaults-extra-file=.github/workflows/github-actions-sql.cnf dfki < data/rki_csv.sql
           rm data/rki_csv.sql
 
       - name: Run update
         run: |
-          ./replay.sh .github/workflows/github-actions-sql.cnf
+          ./replay.sh --dir=/tmp/datadir .github/workflows/github-actions-sql.cnf
 
       - name: Create dump and commit
         run: |
