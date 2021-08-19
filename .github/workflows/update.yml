@@ -1,0 +1,12 @@
+name: Daily update
+
+on:
+  workflow_dispatch:
+
+jobs:
+  daily_update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout script
+        uses: actions/checkout@v2
