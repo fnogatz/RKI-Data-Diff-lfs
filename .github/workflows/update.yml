@@ -30,7 +30,9 @@ jobs:
 
       - name: Prepare database
         run: |
+          ls -la /etc
           mysql -uroot -proot -e 'CREATE DATABASE IF NOT EXISTS dfki;'
+          mysql -uroot -proot -e 'SHOW VARIABLES LIKE "secure_file_priv";'
           gzip -d data/rki_csv.sql.gz
           mysql --defaults-extra-file=.github/workflows/github-actions-sql.cnf dfki < data/rki_csv.sql
           rm data/rki_csv.sql
