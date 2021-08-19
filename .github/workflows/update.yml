@@ -14,4 +14,4 @@ jobs:
       # Request manual activation file
       - name: Print puppy type
         id: printPuppyType
-        run: echo The puppy is ${{ github.event.inputs.puppy 
+        run: echo The puppy is ${{ github.event.inputs.puppy }}
