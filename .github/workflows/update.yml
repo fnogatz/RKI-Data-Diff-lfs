@@ -27,7 +27,6 @@ jobs:
       - name: Configure and start MySQL
         run: |
           echo 'secure_file_priv=""' | sudo tee -a /etc/mysql/mysql.conf.d/mysqld.cnf
-          sudo adduser root mysql
           sudo systemctl start mysql.service
           mysql -uroot -proot -e 'CREATE DATABASE IF NOT EXISTS dfki;'
 
@@ -40,7 +39,7 @@ jobs:
 
       - name: Run update
         run: |
-          ./replay.sh --dir=/tmp/datadir .github/workflows/github-actions-sql.cnf
+          ./replay.sh --dir=/tmp/datadir --chmod .github/workflows/github-actions-sql.cnf
 
       - name: Create dump and commit
         run: |
