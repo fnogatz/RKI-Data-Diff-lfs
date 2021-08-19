@@ -1,21 +1,17 @@
-name: Daily update
-
+name: Test manual action run
 on:
-  push:
-    branches:
-      - 1-daily-update-via-github-actions
   workflow_dispatch:
     inputs:
-      logLevel:
-        description: 'Log level'     
+      puppy:
+        description: 'A kind of puppy.'
         required: true
-        default: 'warning'
-      tags:
-        description: 'Test scenario tags'
-jobs:
-  daily_update:
-    runs-on: ubuntu-latest
 
+jobs:
+  activation:
+    name: Print the input
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout script
-        uses: actions/checkout@v2
+      # Request manual activation file
+      - name: Print puppy type
+        id: printPuppyType
+        run: echo The puppy is ${{ github.event.inputs.puppy 
