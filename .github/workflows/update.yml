@@ -6,6 +6,9 @@ on:
 
   workflow_dispatch:
 
+  push:
+    branches: [ 1-daily-update-via-github-actions ]
+
 jobs:
   make_test:
     runs-on: ubuntu-latest
