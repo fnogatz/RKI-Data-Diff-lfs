@@ -1,13 +1,10 @@
 name: Daily update
 
 on:
-  schedule:
-    - cron: "10 7 * * *"
-
   workflow_dispatch:
 
 jobs:
-  make_test:
+  daily_update:
     runs-on: ubuntu-latest
 
     steps:
