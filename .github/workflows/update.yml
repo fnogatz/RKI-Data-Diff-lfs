@@ -10,7 +10,7 @@ on:
     branches: [ 1-daily-update-via-github-actions ]
 
 jobs:
-  make_test:
+  update:
     runs-on: ubuntu-latest
 
     steps:
@@ -30,8 +30,7 @@ jobs:
 
       - name: Prepare database
         run: |
-          ls -la .
-          ls -la data
+          mysql -uroot -proot -e 'CREATE DATABASE IF NOT EXISTS dfki;'
           gzip -d data/rki_csv.sql.gz
           mysql --defaults-extra-file=.github/workflows/github-actions-sql.cnf dfki < data/rki_csv.sql
           rm data/rki_csv.sql
