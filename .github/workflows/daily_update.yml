@@ -1,11 +1,15 @@
 name: Daily update
 
 on:
+  push:
+    branches:
+      - master
   workflow_dispatch:
 
 jobs:
   daily_update:
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout script
