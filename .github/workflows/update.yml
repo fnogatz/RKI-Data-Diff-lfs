@@ -6,9 +6,6 @@ on:
 
   workflow_dispatch:
 
-  push:
-    branches: [ 1-daily-update-via-github-actions ]
-
 jobs:
   update:
     runs-on: ubuntu-latest
