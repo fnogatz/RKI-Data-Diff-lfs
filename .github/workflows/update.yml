@@ -29,6 +29,8 @@ jobs:
 
       - name: Prepare database
         run: |
+          ls -la .
+          ls -la data
           gzip -d data/rki_csv.sql.gz
           mysql --defaults-extra-file=.github/workflows/github-actions-sql.cnf dfki < data/rki_csv.sql
           rm data/rki_csv.sql
