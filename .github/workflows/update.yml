@@ -1,6 +1,9 @@
 name: Daily update
 
 on:
+  push:
+    branches:
+      - 1-daily-update-via-github-actions
   workflow_dispatch:
 
 jobs:
