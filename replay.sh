@@ -129,6 +129,7 @@ while [[ ! "$date" > "$DATE_TO" ]]; do
   ./csv-transform.sh --date="$date" "$TMP_DIR/RKI_COVID19.csv" | ./csv-sort.sh > "$TMP_DIR/1-init.csv"
   rm -f "$TMP_DIR/2-tmp.csv"
   ./create-sql-query.sh --known-before --date="$date" "$TMP_DIR/2-tmp.csv" | mysql --defaults-extra-file="$MYSQL_DEFAULTS_FILE"
+  ls -la "$TMP_DIR"
   cat "$TMP_DIR/2-tmp.csv" | ./csv-sort.sh > "$TMP_DIR/3-predump.csv"
   ./patch.sh "$TMP_DIR/3-predump.csv" "$TMP_DIR/1-init.csv" > "$TMP_DIR/4-patch.sql"
   changes=$(tail -n1 "$TMP_DIR/4-patch.sql")
