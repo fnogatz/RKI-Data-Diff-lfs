@@ -1,17 +1,39 @@
-name: Test manual action run
+name: Daily update
+
 on:
+  schedule:
+    - cron: "10 7 * * *"
+
   workflow_dispatch:
-    inputs:
-      puppy:
-        description: 'A kind of puppy.'
-        required: true
 
 jobs:
-  activation:
-    name: Print the input
+  make_test:
     runs-on: ubuntu-latest
+
     steps:
-      # Request manual activation file
-      - name: Print puppy type
-        id: printPuppyType
-        run: echo The puppy is ${{ github.event.inputs.puppy }}
+      - name: Checkout script
+        uses: actions/checkout@v2
+
+      - name: Checkout data
+        uses: actions/checkout@v2
+        with:
+          ref: dump
+          path: data
+
+      - name: Start and configure MySQL
+        run: |
+          sudo systemctl start mysql.service
+
+      - name: Prepare database
+        run: |
+          gzip -d data/rki_csv.sql.gz
+          mysql --defaults-extra-file=.github/workflows/github-actions-sql.cnf dfki < data/rki_csv.sql
+          rm data/rki_csv.sql
+
+      - name: Run update
+        run: |
+          ./replay.sh --dir=/tmp .github/workflows/github-actions-sql.cnf
+
+      - name: Create dump and commit
+        run: |
+          mysqldump --defaults-extra-file=.github/workflows/github-actions-sql.cnf dfki | gzip > data/rki_csv.sql.gz
