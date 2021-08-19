@@ -1,0 +1,39 @@
+name: Daily update
+
+on:
+  schedule:
+    - cron: "10 7 * * *"
+
+  workflow_dispatch:
+
+jobs:
+  make_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout script
+        uses: actions/checkout@v2
+
+      - name: Checkout data
+        uses: actions/checkout@v2
+        with:
+          ref: dump
+          path: data
+
+      - name: Start and configure MySQL
+        run: |
+          sudo systemctl start mysql.service
+
+      - name: Prepare database
+        run: |
+          gzip -d data/rki_csv.sql.gz
+          mysql --defaults-extra-file=.github/workflows/github-actions-sql.cnf dfki < data/rki_csv.sql
+          rm data/rki_csv.sql
+
+      - name: Run update
+        run: |
+          ./replay.sh --dir=/tmp .github/workflows/github-actions-sql.cnf
+
+      - name: Create dump and commit
+        run: |
+          mysqldump --defaults-extra-file=.github/workflows/github-actions-sql.cnf dfki | gzip > data/rki_csv.sql.gz
