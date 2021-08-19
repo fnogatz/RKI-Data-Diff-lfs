@@ -39,7 +39,7 @@ jobs:
 
       - name: Run update
         run: |
-          ./replay.sh --dir=/tmp .github/workflows/github-actions-sql.cnf
+          ./replay.sh .github/workflows/github-actions-sql.cnf
 
       - name: Create dump and commit
         run: |
