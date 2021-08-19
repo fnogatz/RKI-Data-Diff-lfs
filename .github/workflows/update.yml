@@ -24,14 +24,13 @@ jobs:
           ref: dump
           path: data
 
-      - name: Start and configure MySQL
+      - name: Configure and start MySQL
         run: |
+          echo 'secure_file_priv=""' | sudo tee -a /etc/mysql/mysql.conf.d/mysqld.cnf
           sudo systemctl start mysql.service
 
       - name: Prepare database
         run: |
-          ls -la /etc/mysql
-          cat /etc/mysql/mysql.conf.d/mysqld.cnf
           mysql -uroot -proot -e 'CREATE DATABASE IF NOT EXISTS dfki;'
           mysql -uroot -proot -e 'SHOW VARIABLES LIKE "secure_file_priv";'
           gzip -d data/rki_csv.sql.gz
