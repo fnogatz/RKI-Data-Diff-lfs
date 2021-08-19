@@ -40,10 +40,11 @@ jobs:
       - name: Run update
         run: |
           ./replay.sh --dir=/tmp/datadir --chmod .github/workflows/github-actions-sql.cnf | sed 's/# //' > out.txt
-          cat out.txt
-          cd data
-          git status
 
       - name: Create dump and commit
         run: |
-          mysqldump --defaults-extra-file=.github/workflows/github-actions-sql.cnf dfki | gzip > data/rki_csv.sql.gz
+          mysqldump --defaults-extra-file=.github/workflows/github-actions-sql.cnf dfki | gzip -9 > data/rki_csv.sql.gz
+          cd data
+          git add rki_csv.sql.gz
+          git commit -F out.txt
+          git push origin dump
