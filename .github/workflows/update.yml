@@ -30,7 +30,8 @@ jobs:
 
       - name: Prepare database
         run: |
-          ls -la /etc
+          ls -la /etc/mysql
+          cat /etc/mysql/mysql.conf.d/mysqld.cnf
           mysql -uroot -proot -e 'CREATE DATABASE IF NOT EXISTS dfki;'
           mysql -uroot -proot -e 'SHOW VARIABLES LIKE "secure_file_priv";'
           gzip -d data/rki_csv.sql.gz
