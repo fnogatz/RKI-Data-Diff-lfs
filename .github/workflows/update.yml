@@ -39,7 +39,10 @@ jobs:
 
       - name: Run update
         run: |
-          ./replay.sh --dir=/tmp/datadir --chmod .github/workflows/github-actions-sql.cnf
+          ./replay.sh --dir=/tmp/datadir --chmod .github/workflows/github-actions-sql.cnf | sed 's/# //' > out.txt
+          cat out.txt
+          cd data
+          git status
 
       - name: Create dump and commit
         run: |
