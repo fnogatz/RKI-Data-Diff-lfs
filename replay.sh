@@ -17,6 +17,7 @@ function usage() {
   echo -e "  -d=DIR, --dir=DIR\t\tUse this directory for temporary files\n\t\t\t\t(default: /tmp/...)"
   echo -e "  -t=TABLE, --table=TABLE\tUse this SQL table name\n\t\t\t\t(default: rki_csv)"
   echo -e "  --init\t\t\tStart with init phase instead of just updating data"
+  echo -e "  --chmod\t\t\tCall chmod for created 2-tmp.csv"
   echo -e "  --stats-only\t\t\tOnly print the LOC of each day's CSV"
   echo -e "  --source=URL\t\t\tGitHub URL of data repository\n\t\t\t\t(default: $SOURCE_DEFAULT)"
   echo -e "  -h, --help\t\t\tShow this message and exit"
@@ -48,6 +49,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --stats-only)
       STATS_ONLY=true
+      shift
+      ;;
+    --chmod)
+      CHMOD=true
       shift
       ;;
     --source=*)
@@ -129,6 +134,11 @@ while [[ ! "$date" > "$DATE_TO" ]]; do
   ./csv-transform.sh --date="$date" "$TMP_DIR/RKI_COVID19.csv" | ./csv-sort.sh > "$TMP_DIR/1-init.csv"
   rm -f "$TMP_DIR/2-tmp.csv"
   ./create-sql-query.sh --known-before --date="$date" "$TMP_DIR/2-tmp.csv" | mysql --defaults-extra-file="$MYSQL_DEFAULTS_FILE"
+  
+  if [[ ! -z "$CHMOD" ]]; then
+    sudo chmod o+r "$TMP_DIR/2-tmp.csv"
+  fi
+
   cat "$TMP_DIR/2-tmp.csv" | ./csv-sort.sh > "$TMP_DIR/3-predump.csv"
   ./patch.sh "$TMP_DIR/3-predump.csv" "$TMP_DIR/1-init.csv" > "$TMP_DIR/4-patch.sql"
   changes=$(tail -n1 "$TMP_DIR/4-patch.sql")

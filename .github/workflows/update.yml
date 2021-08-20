@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  make_test:
+  update:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,23 +17,33 @@ jobs:
       - name: Checkout data
         uses: actions/checkout@v2
         with:
+          lfs: true
           ref: dump
           path: data
 
-      - name: Start and configure MySQL
+      - name: Configure and start MySQL
         run: |
+          echo 'secure_file_priv=""' | sudo tee -a /etc/mysql/mysql.conf.d/mysqld.cnf
           sudo systemctl start mysql.service
+          mysql -uroot -proot -e 'CREATE DATABASE IF NOT EXISTS dfki;'
 
       - name: Prepare database
         run: |
+          sudo mkdir /tmp/datadir && sudo chmod 777 /tmp/datadir
           gzip -d data/rki_csv.sql.gz
           mysql --defaults-extra-file=.github/workflows/github-actions-sql.cnf dfki < data/rki_csv.sql
           rm data/rki_csv.sql
 
       - name: Run update
         run: |
-          ./replay.sh --dir=/tmp .github/workflows/github-actions-sql.cnf
+          ./replay.sh --dir=/tmp/datadir --chmod .github/workflows/github-actions-sql.cnf | sed 's/# //' > out.txt
 
       - name: Create dump and commit
         run: |
-          mysqldump --defaults-extra-file=.github/workflows/github-actions-sql.cnf dfki | gzip > data/rki_csv.sql.gz
+          mysqldump --defaults-extra-file=.github/workflows/github-actions-sql.cnf dfki | gzip -9 > data/rki_csv.sql.gz
+          cd data
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add rki_csv.sql.gz
+          git commit -F ../out.txt
+          git push origin dump
