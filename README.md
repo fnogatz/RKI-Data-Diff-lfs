@@ -1,15 +1,15 @@
 # RKI Data Diff
 
-Shell scripts to get a minimal set of SQL commands for persistent yet efficient storage of RKI data for COVID19.
+Shell scripts to get a minimal set of SQL commands for persistent yet efficient storage of RKI data for COVID19. A daily updated dump of the resulting SQL database can be found in the [`dump` branch](https://github.com/DFKI/RKI-Data-Diff/tree/dump).
 
-This repository contains scripts to process RKI data given as unsorted CSV files and create a minimal set of SQL commands to go preserve its full history of updates. It consists of four parts:
+This repository contains scripts to process RKI data given as unsorted CSV files and create a minimal set of SQL commands to preserve its full history of updates. It consists of four parts:
 
 - `csv-transform.sh`, which transforms a CSV provided by RKI into a cleaned form that can be imported as the initial state into SQL.
 - `csv-sort.sh`, which sorts this CSV file.
 - `create-sql-query.sh`, which creates the SQL query to dump data in the same form as a cleaned CSV.
 - `patch.sh`, which takes two CSV files and generates SQL commands to get from the current state stored in the SQL table to the new state provided by the RKI dump.
 
-In addition, `replay.sh` combines all four parts and allows to automate this process for a given time span.
+In addition, `replay.sh` combines all four parts and allows to automate this process for a given time span. It is for instance used in our [GitHub Actions recipe](https://github.com/DFKI/RKI-Data-Diff/blob/main/.github/workflows/update.yml).
 
 Each Bash script comes with its own command line arguments, so simply call them with `--help` to get a full list of options.
 
@@ -32,7 +32,7 @@ cat create-table.sql | mysql # -u [username] -p [database]
 The initial data can be created from a given RKI CSV file as follows:
 
 ```sh
-cat data/RKI_COVID19_2021-04-22.csv | ./csv-transform.sh --date=2021-04-22 | ./csv-sort.sh > data/RKI_COVID19_2021-04-22_init.csv
+cat /path/to/data/RKI_COVID19_2021-04-22.csv | ./csv-transform.sh --date=2021-04-22 | ./csv-sort.sh > /path/to/data/RKI_COVID19_2021-04-22_init.csv
 ```
 
 Load this CSV into SQL:
@@ -46,7 +46,7 @@ LOAD DATA LOCAL INFILE '/path/to/data/RKI_COVID19_2021-04-22_init.csv' INTO TABL
 Create the cleaned and sorted CSV from a given RKI CSV file. This is the same procedure as for the initialisation:
 
 ```sh
-cat data/RKI_COVID19_2021-04-23.csv | ./csv-transform.sh --date=2021-04-23 | ./csv-sort.sh > data/RKI_COVID19_2021-04-23_init.csv
+cat /path/to/data/RKI_COVID19_2021-04-23.csv | ./csv-transform.sh --date=2021-04-23 | ./csv-sort.sh > /path/to/data/RKI_COVID19_2021-04-23_init.csv
 ```
 
 Create an unsorted CSV dump of the state currently stored in the SQL table:
@@ -58,13 +58,13 @@ Create an unsorted CSV dump of the state currently stored in the SQL table:
 Sort the generated file:
 
 ```sh
-cat data/RKI_COVID19_2021-04-23_tmp.csv | ./csv-sort.sh > data/RKI_COVID19_2021-04-23_predump.csv
+cat /path/to/data/RKI_COVID19_2021-04-23_tmp.csv | ./csv-sort.sh > /path/to/data/RKI_COVID19_2021-04-23_predump.csv
 ```
 
 Compare it to the latest RKI CSV, generate a minimal set of changes, and load them into SQL:
 
 ```sh
-./patch.sh data/RKI_COVID19_2021-04-23_predump.csv data/RKI_COVID19_2021-04-23_init.csv | mysql # -u [username] -p [database]
+./patch.sh /path/to/data/RKI_COVID19_2021-04-23_predump.csv /path/to/data/RKI_COVID19_2021-04-23_init.csv | mysql # -u [username] -p [database]
 ```
 
 ### Check
@@ -78,18 +78,20 @@ To get the data as if it were some given date, just call the query created by `.
 The generated file can be checked against the official RKI CSV dump for this date as follows:
 
 ```sh
-diff <(cat data/RKI_COVID19_2021-04-23_dump.csv | ./csv-sort.sh --without-metadata) <(cat data/RKI_COVID19_2021-04-23_init.csv | ./csv-sort.sh --without-metadata)
+diff <(cat /path/to/data/RKI_COVID19_2021-04-23_dump.csv | ./csv-sort.sh --without-metadata) <(cat /path/to/data/RKI_COVID19_2021-04-23_init.csv | ./csv-sort.sh --without-metadata)
 ```
 
 ## Background
 
-The RKI publishes every day a new CSV dump of all COVID19 cases in Germany, where only about 0.2% to 2.0% of all data rows are changed per day. However, only the aggregeated CSV dumps are known for synchronisation. In order to get a minimal set of instructions to go from one data version to the other, this repository was created. It adopts ideas and code from the more generic [`tablediff` tool](https://github.com/fnogatz/tablediff), which serves a similar purpose for any pair of two CSV dumps.
+The RKI publishes every day a new CSV dump of all COVID19 cases in Germany, where only about 0.2% to 2.0% of all data rows are changed per day. However, only the aggregated CSV dumps are known for synchronisation. In order to get a minimal set of instructions to go from one data version to the other, this repository was created. It adopts ideas and code from the more generic [`tablediff` tool](https://github.com/fnogatz/tablediff), which serves a similar purpose for any pair of two CSV dumps.
 
 The Bash scripts use a combination of shell's `awk`, `sort`, and `diff` commands, to split, sort, and compare large CSV files and SQL dumps in a best-effort manner.
 
 ## Work with the Data
 
 Some example SQL queries to get the total number of cases, new cases reported at a specific date, etc., are given in [`Queries.md`](Queries.md).
+
+We provide a daily updated dump of the resulting SQL database via GitHub Actions. It can be found in the [`dump` branch](https://github.com/DFKI/RKI-Data-Diff/tree/dump).
 
 ## FAQ
 
