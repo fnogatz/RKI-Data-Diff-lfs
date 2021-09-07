@@ -2,7 +2,7 @@
 
 TODAY=$(date '+%Y-%m-%d')
 
-function usage() {
+usage() {
   echo "Usage: patch [OPTIONS] STATE CSV"
   echo
   echo "  Generate SQL-commands from two CSV dumps."
@@ -13,55 +13,7 @@ function usage() {
   exit
 }
 
-while [[ $# -gt 2 ]]; do
-  key="$1"
-  case $key in
-    -h | --help)
-      usage
-      shift
-      ;;
-    *)
-      usage
-      shift
-      ;;
-  esac
-done
-
-if [[ $# -lt 2 ]]; then
-  usage
-fi
-
-exec 3< "$1"
-exec 4< "$2"
-
-read -r row1 <&3 && read -r row2 <&4 # omit very first line
-
-# read in and preprocess second line
-read -r row1 <&3
-read -r row2 <&4
-data1=${row1::-30}
-metadata1=${row1: -29}
-data2=${row2::-30}
-metadata2=${row2: -29}
-
-# store today's date from file2
-dfid=${row2: -15}
-yyyymmdd="${dfid:0:4}-${dfid:4:2}-${dfid:6:2}"
-REF_TODAY=$(date -d @$(date -d $yyyymmdd +"%s") +"%Y-%m-%d")
-REF_YESTERDAY=$(date -I -d "$yyyymmdd - 1 day")
-
-row1line=1
-row2line=1
-additions=()
-n_additions=0
-deletions=()
-n_deletions=0
-changed=0
-
-diff_additions=-1
-diff_deletions=-1
-
-function print_changes() {
+print_changes() {
   if [[ n_additions -gt 0 || n_deletions -gt 0 ]]; then
     # print previous change
 
@@ -120,29 +72,95 @@ function print_changes() {
   fi
 }
 
-# loop through all lines
-while [[ -n "$data1" || -n "$data2" ]]; do
-  gueltigBis=${metadata1::-16}
-  gueltigBis=${gueltigBis: -10}
+process_row1() {
+  i=1
+  IFS=',' read -ra ROW <<< "$row1"
+  if [[ "${ROW[14]}" < "$REF_TODAY" ]]; then
+    row1=""
+    for col in "${ROW[@]}"; do
+      if [[ "$col" == "1" && ($i -eq 6 || $i -eq 7 || $i -eq 8 ) ]]; then
+        row1+="0,"
+      else
+        row1+="$col,"
+      fi
+      ((i++))
+    done
+    row1=${row1::-1}
+  fi
 
-  if [[ $gueltigBis =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2} && ! "$gueltigBis" > "$REF_YESTERDAY" ]]; then
+  data1=${row1::-30}
+  metadata1=${row1: -29}
+
+  gueltig_bis=${metadata1::-16}
+  gueltig_bis=${gueltig_bis: -10}
+
+  if [[ $gueltig_bis =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2} && ! "$gueltig_bis" > "$REF_YESTERDAY" ]]; then
     # skip row1 as its already set to be not valid anymore
     if read -r row1 <&3; then
-      data1=${row1::-30}
-      metadata1=${row1: -29}
+      process_row1
     else
       data1=""
     fi
     ((row1line++))
-    continue
   fi
+}
+
+while [[ $# -gt 2 ]]; do
+  key="$1"
+  case $key in
+    -h | --help)
+      usage
+      shift
+      ;;
+    *)
+      usage
+      shift
+      ;;
+  esac
+done
+
+if [[ $# -lt 2 ]]; then
+  usage
+fi
+
+exec 3< "$1"
+exec 4< "$2"
+
+read -r row1 <&3 && read -r row2 <&4 # omit very first line
+
+# read in and preprocess second line
+read -r row1 <&3
+read -r row2 <&4
+process_row1
+data2=${row2::-30}
+metadata2=${row2: -29}
+
+# store today's date from file2
+dfid=${row2: -15}
+yyyymmdd="${dfid:0:4}-${dfid:4:2}-${dfid:6:2}"
+REF_TODAY=$(date -d @$(date -d $yyyymmdd +"%s") +"%Y-%m-%d")
+REF_YESTERDAY=$(date -I -d "$yyyymmdd - 1 day")
+
+row1line=1
+row2line=1
+additions=()
+n_additions=0
+deletions=()
+n_deletions=0
+changed=0
+
+diff_additions=0
+diff_deletions=0
+
+# loop through all lines
+while [[ -n "$data1" || -n "$data2" ]]; do
+  # switch columns `NeuerFall`, `NeuerTodesfall`, `NeuGenesen`
 
   if [[ "$data1" == "$data2" ]]; then
     print_changes
 
     if read -r row1 <&3; then
-      data1=${row1::-30}
-      metadata1=${row1: -29}
+      process_row1
     else
       data1=""
     fi
@@ -179,8 +197,7 @@ while [[ -n "$data1" || -n "$data2" ]]; do
 
       # continue with the rest of file1
       if read -r row1 <&3; then
-        data1=${row1::-30}
-        metadata1=${row1: -29}
+        process_row1
       else
         data1=""
       fi
@@ -197,12 +214,11 @@ while [[ -n "$data1" || -n "$data2" ]]; do
       ((diff_deletions++))
 
       if read -r row1 <&3; then
-        data1=${row1::-30}
-        metadata1=${row1: -29}
-        ((row1line++))
+        process_row1
       else
         data1=""
       fi
+      ((row1line++))
     else
       # addition of data2, since file1 ended before
       additions+=("$row2")
