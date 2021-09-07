@@ -17,48 +17,20 @@ Each Bash script comes with its own command line arguments, so simply call them 
 
 The overall process to keep track of all data changes consists of three phases: the _initialisation_ creates the SQL table and imports the initial state from a single CSV file provided by RKI. In the second _update_ phase, a set of updates is calculated to keep track of all changes and should be run once a day. To test the correctness of some state, the same scripts can be applied in an optional _check_ phase.
 
-### Prerequisites
-
-Make sure the SQL user is allowed to read from and write to the data directory (`/path/to/data/` in the following usage examples). For the combined `replay.sh`, you first need to create a _MySQL defaults file_, which must be provided as the script's last argument.
-
 ### Initialisation
-
-First, create the SQL table `rki_csv`:
-
-```sh
-cat create-table.sql | mysql # -u [username] -p [database]
-```
 
 The initial data can be created from a given RKI CSV file as follows:
 
 ```sh
-cat /path/to/data/RKI_COVID19_2021-04-22.csv | ./csv-transform.sh --date=2021-04-22 | ./csv-sort.sh > /path/to/data/RKI_COVID19_2021-04-22_init.csv
+cat data/RKI_COVID19_2021-04-22.csv | ./csv-transform.sh --date=2021-04-22 | ./csv-sort.sh > data/rki.csv
 ```
 
-Load this CSV into SQL:
-
-```sql
-LOAD DATA LOCAL INFILE '/path/to/data/RKI_COVID19_2021-04-22_init.csv' INTO TABLE rki_csv CHARACTER SET UTF8 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' IGNORE 1 LINES;
-```
-
-### Update SQL Data
+### Update Data
 
 Create the cleaned and sorted CSV from a given RKI CSV file. This is the same procedure as for the initialisation:
 
 ```sh
-cat /path/to/data/RKI_COVID19_2021-04-23.csv | ./csv-transform.sh --date=2021-04-23 | ./csv-sort.sh > /path/to/data/RKI_COVID19_2021-04-23_init.csv
-```
-
-Create an unsorted CSV dump of the state currently stored in the SQL table:
-
-```sh
-./create-sql-query.sh --known-before --date=2021-04-23 /path/to/data/RKI_COVID19_2021-04-23_tmp.csv | mysql # -u [username] -p [database]
-```
-
-Sort the generated file:
-
-```sh
-cat /path/to/data/RKI_COVID19_2021-04-23_tmp.csv | ./csv-sort.sh > /path/to/data/RKI_COVID19_2021-04-23_predump.csv
+cat data/RKI_COVID19_2021-04-23.csv | ./csv-transform.sh --date=2021-04-23 | ./csv-sort.sh > data/init.csv
 ```
 
 Compare it to the latest RKI CSV, generate a minimal set of changes, and load them into SQL:
@@ -169,10 +141,3 @@ After applying `csv-transform.sh`, the CSV files are of the following columns:
 17. `DFID`
 
 Note that the flag `--without-metadata` provided by the scripts `csv-transform.sh` and `csv-sort.sh` removes the last three columns `GueltigAb`, `GueltigBis`, and `DFID`. This makes it easier to compare two CSV files, as for instance done in the optional _check_ phase.
-
-#### Common Error Messages
-
-- `The MySQL server is running with the --secure-file-priv option so it cannot execute this statement`
-  - Please make sure the SQL user has `FILE` privileges and is allowed to access the specified data directory.
-- `cat: 2-tmp.csv: Permission denied`
-  - The user that executes the script cannot access the CSV dump created by the MySQL process. Make sure to adjust the user's group or the file permissions of files created by MySQL.
