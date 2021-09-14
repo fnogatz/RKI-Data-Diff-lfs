@@ -64,6 +64,9 @@ function normalise_value(name, value) {
             return "\\N";
         }
     }
+    if (name ~ /^Neu/ && value == "1" && flip_neu == "true") {
+        return "0";
+    }
     return value;
 }
 

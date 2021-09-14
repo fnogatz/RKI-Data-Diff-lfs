@@ -13,6 +13,7 @@ function usage() {
   echo -e "  -d=DATE, --date=DATE\t\tUse given date as 'GueltigAb' (default: $TODAY)"
   echo -e "  -c=COLUMNS, --columns=COLUMNS\tUse these columns\n\t\t\t\t(default: $DEFAULT_COLUMNS)"
   echo -e "  --without-metadata\t\tDo not add the last metadata columns"
+  echo -e "  --flip-neu\t\t\tSet colums 'Neu*' to '0' for dates that equal 'GueltigBis'"
   echo -e "  -h, --help\t\t\tShow this message and exit"
   exit
 }
@@ -30,6 +31,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --without-metadata)
       WITHOUT_METADATA=true
+      shift
+      ;;
+    --flip-neu)
+      FLIP_NEU=true
       shift
       ;;
     -h | --help)
@@ -58,4 +63,4 @@ fi
 
 # we need to remove possible BOMs
 sed '1s/^\xEF\xBB\xBF//;s/\r//' < "${1:-/dev/stdin}" \
-  | awk -F, -v FPAT='[^,]*|"[^"]*"' -v gueltigab="$GUELTIGAB" -v without_metadata="$WITHOUT_METADATA" -v columns="$COLUMNS" -f csv-transform.awk
+  | awk -F, -v FPAT='[^,]*|"[^"]*"' -v gueltigab="$GUELTIGAB" -v without_metadata="$WITHOUT_METADATA" -v flip_neu="$FLIP_NEU" -v columns="$COLUMNS" -f csv-transform.awk
