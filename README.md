@@ -1,6 +1,6 @@
 # RKI Data Diff
 
-Shell scripts to get a minimal set of SQL commands for persistent yet efficient storage of RKI data for COVID19. A daily updated dump of the resulting SQL database can be found in the [`dump` branch](https://github.com/DFKI/RKI-Data-Diff/tree/dump).
+Shell scripts to get a minimal set of SQL commands for persistent yet efficient storage of RKI data for COVID19. A daily updated dump of the resulting SQL database can be found in the [`dump` branch](https://github.com/fnogatz/RKI-Data-Diff/tree/dump).
 
 This repository contains scripts to process RKI data given as unsorted CSV files and create a minimal set of SQL commands to preserve its full history of updates. It consists of four parts:
 
@@ -91,7 +91,7 @@ The Bash scripts use a combination of shell's `awk`, `sort`, and `diff` commands
 
 Some example SQL queries to get the total number of cases, new cases reported at a specific date, etc., are given in [`Queries.md`](Queries.md).
 
-We provide a daily updated dump of the resulting SQL database via GitHub Actions. It can be found in the [`dump` branch](https://github.com/DFKI/RKI-Data-Diff/tree/dump).
+We provide a daily updated dump of the resulting SQL database via GitHub Actions. It can be found in the [`dump` branch](https://github.com/fnogatz/RKI-Data-Diff/tree/dump).
 
 ## FAQ
 
