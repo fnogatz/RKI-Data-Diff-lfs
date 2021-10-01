@@ -5,6 +5,9 @@ export LC_NUMERIC="en_US.UTF-8"
 TODAY=$(date '+%Y-%m-%d')
 SOURCE_DEFAULT="https://github.com/micb25/RKI_COVID19_DATA/raw/master"
 
+URL_METADATA="https://www.arcgis.com/sharing/rest/content/items/f10774f1c63e40168479a1feb6c7ca74?f=json"
+URL_DATASET="https://www.arcgis.com/sharing/rest/content/items/f10774f1c63e40168479a1feb6c7ca74/data"
+
 function usage() {
   echo "Usage: ./replay.sh [OPTIONS] [MYSQL_DEFAULTS_FILE]"
   echo
@@ -120,8 +123,20 @@ fi
 
 while [[ ! "$date" > "$DATE_TO" ]]; do
   START=$(date +%s.%N)
-  wget -q "$SOURCE/RKI_COVID19_$date.csv.gz" -O "$TMP_DIR/RKI_COVID19.csv.gz"
-  gzip -d -f "$TMP_DIR/RKI_COVID19.csv.gz"
+
+  if [[ "$date" == "$DATE_TO" ]]; then
+    # load from official source
+    modified=$(curl -s -X GET -H "Accept: application/json" "$URL_METADATA" 2>&1 | sed -E 's/.*"modified":([0-9]+)000.*/\1/')
+    modified=$(date -d "@$modified" '+%Y-%m-%d')
+    if [[ "$date" != "$modified" ]]; then
+      echo "Updated data for $date does not yet exist (modified date: $modified)"
+      exit 1
+    fi
+    wget -q "$URL_DATASET" -O "$TMP_DIR/RKI_COVID19.csv"
+  else
+    wget -q "$SOURCE/RKI_COVID19_$date.csv.gz" -O "$TMP_DIR/RKI_COVID19.csv.gz"
+    gzip -d -f "$TMP_DIR/RKI_COVID19.csv.gz"
+  fi
 
   lines=$(wc -l "$TMP_DIR/RKI_COVID19.csv" | sed 's/ .*$/ /g')
 
