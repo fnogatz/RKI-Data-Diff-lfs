@@ -124,7 +124,7 @@ fi
 while [[ ! "$date" > "$DATE_TO" ]]; do
   START=$(date +%s.%N)
 
-  if [[ "$date" == "$DATE_TO" ]]; then
+  if [[ "$date" == "$TODAY" ]]; then
     # load from official source
     modified=$(curl -s -X GET -H "Accept: application/json" "$URL_METADATA" 2>&1 | sed -E 's/.*"modified":([0-9]+)000.*/\1/')
     modified=$(date -d "@$modified" '+%Y-%m-%d')
