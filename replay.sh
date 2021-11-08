@@ -22,6 +22,7 @@ function usage() {
   echo -e "  --init\t\t\tStart with init phase instead of just updating data"
   echo -e "  --chmod\t\t\tCall chmod for created 2-tmp.csv"
   echo -e "  --stats-only\t\t\tOnly print the LOC of each day's CSV"
+  echo -e "  --get-metadata\t\t\tOnly print the modification date of the latest CSV from RKI"
   echo -e "  --source=URL\t\t\tGitHub URL of data repository\n\t\t\t\t(default: $SOURCE_DEFAULT)"
   echo -e "  -h, --help\t\t\tShow this message and exit"
   exit
@@ -54,6 +55,10 @@ while [[ $# -gt 0 ]]; do
       STATS_ONLY=true
       shift
       ;;
+    --get-metadata)
+      GET_METADATA=true
+      shift
+      ;;
     --chmod)
       CHMOD=true
       shift
@@ -72,8 +77,15 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ $# -lt 1 && -z "$STATS_ONLY" ]]; then
+if [[ $# -lt 1 && -z "$STATS_ONLY" && -z "$GET_METADATA" ]]; then
   usage
+fi
+
+if [[ ! -z "$GET_METADATA" ]]; then
+  modified=$(curl -s -X GET -H "Accept: application/json" "$URL_METADATA" 2>&1 | sed -E 's/.*"modified":([0-9]+)000.*/\1/')
+  modified=$(date -d "@$modified" '+%Y-%m-%d')
+  echo "$modified"
+  exit 0
 fi
 
 MYSQL_DEFAULTS_FILE="$1"
